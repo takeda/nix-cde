@@ -37,7 +37,7 @@
         "poetry2nix": "poetry2nix"
       },
       "locked": {
-        "narHash": "sha256-poojBB7i33Uf6hk6f0CxPSiL+sAa2FHuNcaW395zblU=",
+        "narHash": "sha256-2W2YrSkV6lBEjig9QGEWm1mRem4qiC0stI4/CI176CU=",
         "path": "../..",
         "type": "path"
       },

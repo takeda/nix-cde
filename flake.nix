@@ -13,6 +13,5 @@
 
   outputs = { self, nixpkgs, npmlock2nix, poetry2nix } @ sources: {
     lib.mkCDE = import ./nix-cde.nix { inherit sources; };
-    overlays.default = import ./overlay.nix;
   };
 }

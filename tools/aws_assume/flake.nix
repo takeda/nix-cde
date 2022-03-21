@@ -6,9 +6,9 @@
 
   outputs = { self, flake-utils, nix-cde, nixpkgs }: flake-utils.lib.eachDefaultSystem (system: 
     let
-      cde = is_shell: nix-cde.lib ./project.nix {
+      cde = is_shell: nix-cde.lib.mkCDE ./project.nix {
         inherit is_shell;
-        host_system = system;
+        build_system = system;
       };
     in {
       packages.default = (cde false).outputs.out_python;

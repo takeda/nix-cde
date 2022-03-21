@@ -1,33 +1,42 @@
 { sources
-, default_host_system ? null
+, default_build_system ? null
 }:
 
 project:
 
-{ host_system ? default_host_system
+{ build_system ? default_build_system
+, host_system ? build_system
 , is_shell ? false
 }:
 
 let
-  npmlock2nix_overlay = (self: super: {
-    npmlock2nix = self.callPackage sources.npmlock2nix {};
-  });
+  overlays = [
+    (self: super: {
+      nix-cde.mkCDE = import ./nix-cde.nix {
+        inherit sources;
+        default_build_system = build_system;
+      };
+      npmlock2nix = self.callPackage sources.npmlock2nix {};
+    })
+    sources.poetry2nix.overlay
+  ];
   pkgs = import sources.nixpkgs {
+    inherit overlays;
     config = {};
-    overlays = [
-      sources.poetry2nix.overlay
-      npmlock2nix_overlay
-    ];
     system = host_system;
   };
-  lib = pkgs.lib;
+  pkgs_native = import sources.nixpkgs {
+    inherit overlays;
+    config = {};
+    system = build_system;
+  };
+  lib = pkgs_native.lib;
 
   base_module = { config, ... }:
   {
     config._module.args = {
-      inherit pkgs lib is_shell;
+      inherit pkgs pkgs_native lib is_shell;
       src = pkgs.nix-gitignore.gitignoreSource ["*.nix\n"] config.src;
-      nix-cde = import ./nix-cde.nix { inherit sources; default_host_system = host_system; };
     };
   };
 
