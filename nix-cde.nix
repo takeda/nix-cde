@@ -36,7 +36,7 @@ let
   {
     config._module.args = {
       inherit pkgs pkgs_native lib is_shell;
-      src = pkgs.nix-gitignore.gitignoreSource ["*.nix\n"] config.src;
+      src = pkgs.nix-gitignore.gitignoreSource ["*.nix\nflake.lock\n"] config.src;
     };
   };
 

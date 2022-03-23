@@ -11,7 +11,6 @@
             description = "python package";
             example = "python38";
           };
-          musl = mkEnableOption "use musl instead of glibc";
           bzip2 = mkOption { type = types.bool; default = false; };
           expat = mkOption { type = types.bool; default = false; };
           libffi = mkOption { type = types.bool; default = false; };
