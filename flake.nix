@@ -9,9 +9,12 @@
 
     poetry2nix.url = "github:nix-community/poetry2nix";
     poetry2nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    terraform-providers.url = "github:numtide/nixpkgs-terraform-providers-bin";
+    terraform-providers.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, npmlock2nix, poetry2nix } @ sources: {
+  outputs = { self, nixpkgs, npmlock2nix, poetry2nix, terraform-providers } @ sources: {
     lib.mkCDE = import ./nix-cde.nix { inherit sources; };
   };
 }

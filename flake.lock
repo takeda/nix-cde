@@ -15,13 +15,28 @@
         "type": "github"
       }
     },
+    "flake-utils_2": {
+      "locked": {
+        "lastModified": 1644229661,
+        "narHash": "sha256-1YdnJAsNy69bpcjuoKdOYQX0YxZBiCYZo4Twxerqv7k=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "3cecb5b042f7f209c56ffd8371b2711a290ec797",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1647350163,
-        "narHash": "sha256-OcMI+PFEHTONthXuEQNddt16Ml7qGvanL3x8QOl2Aao=",
+        "lastModified": 1648097358,
+        "narHash": "sha256-GMoTKP/po2Nbkh1tvPvP8Ww6NyFW8FFst1Z3nfzffZc=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "3eb07eeafb52bcbf02ce800f032f18d666a9498d",
+        "rev": "4d60081494259c0785f7e228518fee74e0792c1b",
         "type": "github"
       },
       "original": {
@@ -72,7 +87,29 @@
       "inputs": {
         "nixpkgs": "nixpkgs",
         "npmlock2nix": "npmlock2nix",
-        "poetry2nix": "poetry2nix"
+        "poetry2nix": "poetry2nix",
+        "terraform-providers": "terraform-providers"
+      }
+    },
+    "terraform-providers": {
+      "inputs": {
+        "flake-utils": "flake-utils_2",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1648166984,
+        "narHash": "sha256-/VFIsydfGUMHIkr5hu6OvDkQ6HrK+PNSpHm3eCuUVwA=",
+        "owner": "numtide",
+        "repo": "nixpkgs-terraform-providers-bin",
+        "rev": "9e279bdcda078ba717f915cc518f26098eadd738",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "nixpkgs-terraform-providers-bin",
+        "type": "github"
       }
     }
   },

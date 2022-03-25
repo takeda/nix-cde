@@ -27,9 +27,9 @@
       description = "list of packages to include in dev environment";
       default = [];
     };
-    shell_vars = mkOption {
+    shell_hook = mkOption {
       type = types.lines;
-      description = "additional variables for the shell";
+      description = "additional commands to execute when entering the shell";
       default = "";
     };
 
@@ -51,7 +51,7 @@
   in {
     out_shell = pkgs.mkShell {
       buildInputs = config.dev_apps ++ [ dev_tools_env ];
-      shellHook = config.shell_vars;
+      shellHook = config.shell_hook;
     };
   };
 }
