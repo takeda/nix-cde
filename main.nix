@@ -6,6 +6,11 @@
       type = types.str;
       description = "name of the project";
     };
+    version = mkOption {
+      type = types.str;
+      description = "version of the package";
+      default = "0.0.0";
+    };
     src = mkOption {
       type = types.path;
       description = "path to the source code";

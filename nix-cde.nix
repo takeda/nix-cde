@@ -19,6 +19,8 @@ let
       npmlock2nix = self.callPackage sources.npmlock2nix {};
     })
     sources.poetry2nix.overlay
+    sources.gomod2nix.overlay
+    sources.naersk.overlay
   ];
   pkgs = import sources.nixpkgs {
     inherit overlays;

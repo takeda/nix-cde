@@ -12,9 +12,24 @@
 
     terraform-providers.url = "github:numtide/nixpkgs-terraform-providers-bin";
     terraform-providers.inputs.nixpkgs.follows = "nixpkgs";
+
+    gomod2nix.url = "github:tweag/gomod2nix";
+    gomod2nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    naersk.url = "github:nix-community/naersk";
+    naersk.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, npmlock2nix, poetry2nix, terraform-providers } @ sources: {
+  outputs = { ... } @ sources: {
+    defaultTemplate = {
+      path = ./template;
+      description = "An example of a nix-cde project";
+    };
+
+    overlay = final: prev: {
+      mkCDE = import ./nix-cde.nix { inherit sources; };
+    };
+
     lib.mkCDE = import ./nix-cde.nix { inherit sources; };
   };
 }
