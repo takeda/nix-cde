@@ -7,6 +7,7 @@ project:
 { build_system ? default_build_system
 , host_system ? build_system
 , is_shell ? false
+, overlay ? self: super: {}
 }:
 
 let
@@ -21,6 +22,7 @@ let
     sources.poetry2nix.overlay
     sources.gomod2nix.overlay
     sources.naersk.overlay
+    overlay
   ];
   pkgs = import sources.nixpkgs {
     inherit overlays;
