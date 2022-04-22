@@ -1,4 +1,4 @@
-{ config, is_shell, lib, ... }:
+{ config, is_shell, lib, pkgs, ... }:
 
 {
   options = with lib; {
@@ -59,7 +59,7 @@
       rebuildBytecode = lean_python.rebuild_bytecode;
       stripBytecode = lean_python.strip_bytecode;
       includeSiteCustomize = lean_python.include_site_customize;
-      enableOptimizations = lean_python.enable_optimizations;
+      enableOptimizations = lean_python.enable_optimizations && !pkgs.stdenv.cc.isClang;
     }
     // optionalAttrs (!lean_python.bzip2) { bzip2 = null; }
     // optionalAttrs (!lean_python.expat) { expat = null; }
