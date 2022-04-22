@@ -73,11 +73,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1650527056,
-        "narHash": "sha256-dyBthjAs6JlNNDMi7SY+d2CirgBDqjG8SvZKeUvTLqM=",
+        "lastModified": 1650555608,
+        "narHash": "sha256-e34oMPWPwRWhF1K6NZnF0mNle7qDADJzjWujp8UupGo=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "b06d35b406c2396dd1611dc8601138fa3d06ee60",
+        "rev": "c11ee1c598b15a24d18f142f85ee3d438afc39e6",
         "type": "github"
       },
       "original": {
@@ -142,11 +142,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1650499868,
-        "narHash": "sha256-5g+VFVxRk6TDNJQN0lh8r1EBff+AbgavdYDpFxtGlrE=",
+        "lastModified": 1650586111,
+        "narHash": "sha256-HAqWQRKrHDvbXUG7w+gJ/iV+KN57Q4V+TZHyNjAxyTI=",
         "owner": "numtide",
         "repo": "nixpkgs-terraform-providers-bin",
-        "rev": "ec9bff29146cd94896451da512b9fe05e47ec736",
+        "rev": "58e68786331bb460a913cdb9bab10286c2f54ad8",
         "type": "github"
       },
       "original": {
