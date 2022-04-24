@@ -140,7 +140,7 @@ $ hello
 Hello, World!
 ```
 
-[^1] It is highly encouraged to install [direnv](https://direnv.net/)
+> Note: It is highly encouraged to install [direnv](https://direnv.net/)
 and [nix-direnv](https://github.com/nix-community/nix-direnv).
 If you create `.envrc` file with `use flake` then the shell will
 automatically change upon entering.
@@ -166,11 +166,11 @@ $ docker run --rm b02a1f83e8c2
 Hello, World!
 ```
 
-Please note, that docker images are expected to run linux binaries.
-This is why on Mac docker actually runs on a VM running linux.
-So while above example will work without problems on Linux machine you might run into
-issues if you use a Mac. To build a docker image on Mac you will need a remote
-Linux builder. It could be real linux machine, or you can run one through
+> Note: Docker images typically contain linux binaries. This is the main reason
+why on Mac docker actually runs on a VM running linux. So while above
+example will work without problems on Linux machine you might run into
+issues if you use a Mac. To build a docker image on Mac you will need a
+remote Linux builder. It could be real linux machine, or you can run one through
 [docker](https://github.com/LnL7/nix-docker#running-as-a-remote-builder).
 
 ### Reduce size of the docker image
