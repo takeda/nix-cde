@@ -133,7 +133,11 @@ installed on your computer).
 ```shell
 $ nix develop -c poetry lock
 ```
-Invoke `nix develop`[^1] to enter dev shell and run the command to check it works.
+Invoke `nix develop` to enter dev shell and run the command to check it works.
+`nix develop` essentially creates something similar to Python's `virtualenv` with your
+package installed in editable mode. You can make change to your program and your
+change will take effect immediately. No need of rebuilding or re-running `nix develop`.
+
 ```shell
 $ nix develop
 $ hello
@@ -144,6 +148,7 @@ Hello, World!
 and [nix-direnv](https://github.com/nix-community/nix-direnv).
 If you create `.envrc` file with `use flake` then the shell will
 automatically change upon entering.
+
 
 ### Build the app
 
