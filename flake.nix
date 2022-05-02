@@ -18,6 +18,8 @@
 
     naersk.url = "github:nix-community/naersk";
     naersk.inputs.nixpkgs.follows = "nixpkgs";
+
+    nix-bundle.url = "github:takeda/nix-bundle/nix-cde";
   };
 
   outputs = { ... } @ sources: {

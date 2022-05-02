@@ -68,7 +68,7 @@ nix flake init -t github:takeda/nix-cde
   # modules that our project will use
   require = [
     "${modulesPath}/languages/python-poetry.nix"
-    "${modulesPath}/deployments/build-docker.nix"
+    "${modulesPath}/builders/docker.nix"
   ];
 
   # name of our application

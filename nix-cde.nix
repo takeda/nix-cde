@@ -18,6 +18,7 @@ let
         default_build_system = build_system;
       };
       npmlock2nix = self.callPackage sources.npmlock2nix {};
+      nix-bundle-lib = sources.nix-bundle.lib { nixpkgs = self; };
     })
     sources.poetry2nix.overlay
     sources.gomod2nix.overlay
