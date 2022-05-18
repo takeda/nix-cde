@@ -12,6 +12,7 @@
             example = "python38";
           };
           bzip2 = mkOption { type = types.bool; default = false; };
+          configd = mkOption { type = types.bool; default = false; };
           expat = mkOption { type = types.bool; default = false; };
           libffi = mkOption { type = types.bool; default = false; };
           gdbm = mkOption { type = types.bool; default = false; };
@@ -62,6 +63,7 @@
       enableOptimizations = lean_python.enable_optimizations && !pkgs.stdenv.cc.isClang;
     }
     // optionalAttrs (!lean_python.bzip2) { bzip2 = null; }
+    // optionalAttrs (!lean_python.configd) { configd = null; }
     // optionalAttrs (!lean_python.expat) { expat = null; }
     // optionalAttrs (!lean_python.libffi) { libffi = null; }
     // optionalAttrs (!lean_python.gdbm) { gdbm = null; }

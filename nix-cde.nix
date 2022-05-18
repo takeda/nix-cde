@@ -7,7 +7,9 @@ project:
 { build_system ? default_build_system
 , host_system ? build_system
 , is_shell ? false
+, cross_compile ? false
 , overlay ? self: super: {}
+, self ? null
 }:
 
 let
@@ -25,15 +27,22 @@ let
     sources.naersk.overlay
     overlay
   ];
-  pkgs = import sources.nixpkgs {
+  pkgs_base = options: import sources.nixpkgs ({
     inherit overlays;
     config = {};
-    system = host_system;
-  };
-  pkgs_native = import sources.nixpkgs {
-    inherit overlays;
-    config = {};
-    system = build_system;
+  } // options);
+
+  # Packages for the host (running) system
+  pkgs = pkgs_base (if cross_compile then {
+    localSystem = build_system;
+    crossSystem = host_system;
+  } else {
+    localSystem = host_system;
+  });
+
+  # Packages for the build system
+  pkgs_native = pkgs_base {
+    localSystem = build_system;
   };
   lib = pkgs_native.lib;
 
@@ -52,6 +61,7 @@ let
       project
     ];
     specialArgs = {
+      inherit self;
       modulesPath = toString ./.;
     };
   };
