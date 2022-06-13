@@ -23,7 +23,7 @@ let
       nix-bundle-lib = sources.nix-bundle.lib { nixpkgs = self; };
     })
     sources.poetry2nix.overlay
-    sources.gomod2nix.overlay
+    sources.gomod2nix.overlays.default
     sources.naersk.overlay
     overlay
   ];
