@@ -20,6 +20,12 @@
             default = {};
           };
 
+          inject_app_env = mkOption {
+            type = types.bool;
+            description = "include the app in the dev env";
+            default = true;
+          };
+
           overrides = mkOption {
             type = types.unspecified;
             description = "override list for poetry packages";
@@ -84,7 +90,7 @@
     };
 
     # python environment used for dev shell
-    python_env = if builtins.pathExists (config.src + "/poetry.lock")
+    python_env = if (cfg.inject_app_env && builtins.pathExists (config.src + "/poetry.lock"))
     then (poetry cfg.package).env
     else cfg.package; # if there's no poetry project, just expose python itself
 
