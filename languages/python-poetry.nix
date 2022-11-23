@@ -22,8 +22,14 @@
 
           inject_app_env = mkOption {
             type = types.bool;
-            description = "include the app in the dev env";
+            description = "include the app in the dev shell";
             default = true;
+          };
+
+          prefer_wheels = mkOption {
+            type = types.bool;
+            description = "prefer using wheels for packages instead of building them";
+            default = false;
           };
 
           overrides = mkOption {
@@ -44,10 +50,10 @@
           };
 
           check_command = mkOption {
-            type = types.str;
+            type = with types; nullOr str;
             description = "command to run to execute unit tests";
             example = "pytest --no-cov";
-            default = "";
+            default = null;
           };
         };
       };
@@ -70,15 +76,17 @@
       poetry2nix = pkgs.poetry2nix.overrideScope' (p2nself: p2nsuper: {
         defaultPoetryOverrides = p2nsuper.defaultPoetryOverrides.extend cfg.overrides;
       });
-    in {
-      app = poetry2nix.mkPoetryApplication {
+      common_cfg = {
         inherit python;
         projectDir = config.src;
-        doCheck = false;
+        preferWheels = cfg.prefer_wheels;
       };
-      env = poetry2nix.mkPoetryEnv {
-        inherit python;
-        projectDir = config.src;
+    in {
+      app = poetry2nix.mkPoetryApplication common_cfg // {
+        doCheck = cfg.check_command != null;
+        checkPhase = cfg.check_command;
+      };
+      env = poetry2nix.mkPoetryEnv common_cfg // {
         editablePackageSources = {
           src = config.src;
         } // cfg.modules;
