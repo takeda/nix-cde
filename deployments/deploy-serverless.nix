@@ -11,6 +11,12 @@
         example = "pkgs.nodejs";
         default = pkgs.nodejs;
       };
+      npmlock2nix_version = mkOption {
+        type = types.enum [ "v1" "v2"];
+        description = "version of npmlock2nix to use v1 - old and stable (doesn't work beyond node 14), v2 - new and experimental";
+        example = "v1";
+        default = "v2";
+      };
 
       package = mkOption {
         type = types.path;
@@ -37,7 +43,7 @@
       cp ${cfg.package_lock} $out/package-lock.json
     '';
 
-    node_modules = pkgs.npmlock2nix.node_modules {
+    node_modules = pkgs.npmlock2nix.${cfg.npmlock2nix_version}.node_modules {
       src = serverless_project;
       nodejs = cfg.nodejs;
       nativeBuildInputs = [
