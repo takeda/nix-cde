@@ -20,6 +20,13 @@
             default = {};
           };
 
+          extra_shell_packages = mkOption {
+            type = with types; functionOf (listOf package);
+            description = "additional packages to include for development (for example pip for serverless)";
+            example = "ps: [ ps.pip ]";
+            default = ps: [ ];
+          };
+
           inject_app_env = mkOption {
             type = types.bool;
             description = "include the app in the dev shell";
@@ -87,9 +94,8 @@
         checkPhase = cfg.check_command;
       };
       env = poetry2nix.mkPoetryEnv common_cfg // {
-        editablePackageSources = {
-          src = config.src;
-        } // cfg.modules;
+        editablePackageSources = cfg.modules;
+        extraPackages = cfg.extra_shell_packages;
       };
       packages = poetry2nix.mkPoetryPackages {
         inherit python;
