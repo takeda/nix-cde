@@ -1,0 +1,198 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  CIDR:
+    Type: String
+    Description: IP addresses used by the CIDR
+    Default: 172.30.0.0/16
+  SSHCIDR:
+    Type: String
+    Description: CIDR to add to the security group
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref CIDR
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+      - Key: Name
+        Value: nix-builder
+
+  VPCIPv6:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      AmazonProvidedIpv6CidrBlock: true
+      VpcId: !Ref VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  IGAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  IPv6EOInternetGateway:
+    Type: AWS::EC2::EgressOnlyInternetGateway
+    Properties:
+      VpcId: !Ref VPC
+
+  #
+  # Endpoints
+  #
+
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: false
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+      SubnetIds:
+      - !Ref PubSubnet0
+      - !Ref PubSubnet1
+      - !Ref PubSubnet2
+      - !Ref PubSubnet3
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+
+  PubSubnet0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AssignIpv6AddressOnCreation: true
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Select [8, !Cidr [!GetAtt VPC.CidrBlock, 16, 8]]
+      Ipv6CidrBlock: !Select [8, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 16, 64]]
+      EnableDns64: false
+      Ipv6Native: false
+      MapPublicIpOnLaunch: true
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsAAAARecord: true
+        EnableResourceNameDnsARecord: true
+        HostnameType: resource-name
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: public
+    DependsOn: VPCIPv6
+
+  PubSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AssignIpv6AddressOnCreation: true
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Select [9, !Cidr [!GetAtt VPC.CidrBlock, 16, 8]]
+      Ipv6CidrBlock: !Select [9, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 16, 64]]
+      EnableDns64: false
+      Ipv6Native: false
+      MapPublicIpOnLaunch: true
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsAAAARecord: true
+        EnableResourceNameDnsARecord: true
+        HostnameType: resource-name
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: public
+    DependsOn: VPCIPv6
+
+  PubSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AssignIpv6AddressOnCreation: true
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      CidrBlock: !Select [10, !Cidr [!GetAtt VPC.CidrBlock, 16, 8]]
+      Ipv6CidrBlock: !Select [10, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 16, 64]]
+      EnableDns64: false
+      Ipv6Native: false
+      MapPublicIpOnLaunch: true
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsAAAARecord: true
+        EnableResourceNameDnsARecord: true
+        HostnameType: resource-name
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: public
+    DependsOn: VPCIPv6
+
+  PubSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AssignIpv6AddressOnCreation: true
+      AvailabilityZone: !Select [3, !GetAZs ""]
+      CidrBlock: !Select [11, !Cidr [!GetAtt VPC.CidrBlock, 16, 8]]
+      Ipv6CidrBlock: !Select [11, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 16, 64]]
+      EnableDns64: false
+      Ipv6Native: false
+      MapPublicIpOnLaunch: true
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsAAAARecord: true
+        EnableResourceNameDnsARecord: true
+        HostnameType: resource-name
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: public
+    DependsOn: VPCIPv6
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicIpv4Egress:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicIpv6Egress:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationIpv6CidrBlock: ::/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetRouteAssoc0:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PubSubnet0
+
+  PublicSubnetRouteAssoc1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PubSubnet1
+
+  PublicSubnetRouteAssoc2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PubSubnet2
+
+  PublicSubnetRouteAssoc3:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PubSubnet3
+
+Outputs:
+  VPC:
+    Description: VPC
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-VPC"
+
+  PublicSubnets:
+    Description: Public subnets
+    Value: !Join [",", [!Ref PubSubnet0, !Ref PubSubnet1, !Ref PubSubnet2, !Ref PubSubnet3]]
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnets"
+
+  DefaultSecurityGroup:
+    Description: Default security group
+    Value: !GetAtt VPC.DefaultSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-DefaultSecurityGroup"
