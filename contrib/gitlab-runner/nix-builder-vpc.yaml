@@ -4,9 +4,6 @@ Parameters:
     Type: String
     Description: IP addresses used by the CIDR
     Default: 172.30.0.0/16
-  SSHCIDR:
-    Type: String
-    Description: CIDR to add to the security group
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -47,12 +44,9 @@ Resources:
     Properties:
       PrivateDnsEnabled: false
       ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
-      SubnetIds:
-      - !Ref PubSubnet0
-      - !Ref PubSubnet1
-      - !Ref PubSubnet2
-      - !Ref PubSubnet3
-      VpcEndpointType: Interface
+      RouteTableIds:
+      - !Ref PublicRouteTable
+      VpcEndpointType: Gateway
       VpcId: !Ref VPC
 
   PubSubnet0:
