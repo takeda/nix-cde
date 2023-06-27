@@ -94,6 +94,7 @@ Resources:
         - DeviceName: /dev/xvda
           Ebs:
             DeleteOnTermination: true
+            Encrypted: true
             VolumeSize: 100
             VolumeType: gp3
         CapacityReservationSpecification:
@@ -101,7 +102,7 @@ Resources:
         EbsOptimized: true
         IamInstanceProfile:
           Name: !Ref InstanceProfile
-        ImageId: ami-06b260b3a958948a0
+        ImageId: ami-0749963dd978a57c7
         InstanceType: c6a.4xlarge
         KeyName: !Ref InstanceKey
         MetadataOptions:
@@ -191,7 +192,7 @@ Resources:
               in with lib;
               {
                 imports = [ "${!modulesPath}/virtualisation/amazon-image.nix" upload-daemon-service ];
-                system.stateVersion = "22.11";
+                system.stateVersion = "23.05";
                 ec2.hvm = true;
               
                 # Workaround from https://github.com/NixOS/nixpkgs/issues/109389
