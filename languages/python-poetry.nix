@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, host_system, lib, pkgs, sources, ... }:
 
 {
   options = with lib; {
@@ -10,7 +10,7 @@
           package = mkOption {
             type = types.package;
             description = "python package";
-            example = "python38";
+            example = "python311";
           };
 
           modules = mkOption {
@@ -80,7 +80,7 @@
   config = let
     cfg = config.python;
     poetry = python: let
-      poetry2nix = pkgs.poetry2nix.overrideScope' (p2nself: p2nsuper: {
+      poetry2nix = sources.poetry2nix.legacyPackages.${host_system}.overrideScope' (p2nself: p2nsuper: {
         defaultPoetryOverrides = p2nsuper.defaultPoetryOverrides.extend cfg.overrides;
       });
       common_cfg = {

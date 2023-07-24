@@ -19,16 +19,20 @@
     naersk.url = "github:nix-community/naersk";
     naersk.inputs.nixpkgs.follows = "nixpkgs";
 
+    nix2container.url = "github:nlewo/nix2container";
+    nix2container.inputs.nixpkgs.follows = "nixpkgs";
+
     nix-bundle.url = "github:takeda/nix-bundle/nix-cde";
+    nix-bundle.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { ... } @ sources: {
-    defaultTemplate = {
+    templates.default = {
       path = ./template;
       description = "An example of a nix-cde project";
     };
 
-    overlay = final: prev: {
+    overlays.default = final: prev: {
       mkCDE = import ./nix-cde.nix { inherit sources; };
     };
 
