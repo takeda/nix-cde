@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, sources, ... }:
 
 {
   options = {
@@ -33,6 +33,7 @@
 
   config = let
     cfg = config.framework.serverless;
+    npmlock2nix = import sources.npmlock2nix { inherit pkgs lib; };
 
     # to prevent rebuilding serverless packages continously on any change
     # we generate a derivation (in this case it is a directory) that contains nothing,
@@ -43,7 +44,7 @@
       cp ${cfg.package_lock} $out/package-lock.json
     '';
 
-    node_modules = pkgs.npmlock2nix.${cfg.npmlock2nix_version}.node_modules {
+    node_modules = npmlock2nix.${cfg.npmlock2nix_version}.node_modules {
       src = serverless_project;
       nodejs = cfg.nodejs;
       nativeBuildInputs = [

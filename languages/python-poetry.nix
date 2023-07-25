@@ -108,7 +108,7 @@
     then (poetry cfg.package).env
     else cfg.package; # if there's no poetry project, just expose python itself
 
-  in lib.mkIf cfg.enable {
+  in lib.mkIf config.python.enable {
     dev_commands = [
       pkgs.poetry
     ];

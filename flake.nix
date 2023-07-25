@@ -26,16 +26,18 @@
     nix-bundle.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { ... } @ sources: {
+  outputs = { self, nixpkgs, ... } @ sources: let
+    nix-cde = nixpkgs.lib.fix (import ./nix-cde.nix);
+  in {
     templates.default = {
       path = ./template;
       description = "An example of a nix-cde project";
     };
 
     overlays.default = final: prev: {
-      mkCDE = import ./nix-cde.nix { inherit sources; };
+      mkCDE = nix-cde { inherit sources; };
     };
 
-    lib.mkCDE = import ./nix-cde.nix { inherit sources; };
+    lib.mkCDE = nix-cde { inherit sources; };
   };
 }

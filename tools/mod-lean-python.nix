@@ -52,7 +52,7 @@
   config = let
     lean_python = config.lean_python;
   in {
-    out_lean_python = with lib; if (!lean_python.enable || is_shell)
+    out_lean_python = with lib; if (!config.lean_python.enable || is_shell)
     then lean_python.package
     else (lean_python.package.override ({
       mimetypesSupport = lean_python.mimetypes_support;

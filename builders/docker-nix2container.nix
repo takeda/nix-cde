@@ -7,10 +7,31 @@
         options = {
           enable = mkEnableOption "docker";
 
-          contents = mkOption {
-            type = with types; listOf package;
-            description = "derivations that will make the root of the container";
-            default = [];
+          max_layers = mkOption {
+            type = types.ints.between 1 125;
+            description = "maximum number of layers to create";
+            default = 1;
+          };
+
+          tag = mkOption {
+            type = with types; nullOr str;
+            description = "tag for the docker image";
+            default = null;
+          };
+
+          copy_to_root = mkOption {
+            type = with types; nullOr unspecified;
+            description = "list of derivations copied in the image root directory";
+            example = ''
+              [
+                pkgs.buildEnv {
+                  name = "root";
+                  paths = [ pkgs.bashInteractive pkgs.coreutils ];
+                  pathsToLink = [ "/bin" ];
+                }
+              ]
+            '';
+            default = null;
           };
 
           entrypoint = mkOption {
@@ -60,6 +81,33 @@
             example = ''[ "/var/my-app-data" "/etc/some-config.d" ]'';
             default = null;
           };
+
+          perms = mkOption {
+            type = with types; listOf attrs;
+            description = "permissions to set in the produced image";
+            example = ''
+              [
+                {
+                  path = "a store path";
+                  regex = ".*";
+                  mode = "0664";
+                }
+              ]
+            '';
+            default = [];
+          };
+
+          layers = mkOption {
+            type = with types; listOf unspecified;
+            description = "list of layers to include";
+            default = [];
+          };
+
+          initialize_nix_db = mkOption {
+            type = types.bool;
+            description = "initialize nix database with all stored paths (this is used for images where you will want to have nix command e.g. CI)";
+            default = false;
+          };
         };
       };
       default = {};
@@ -74,9 +122,17 @@
     cfg = config.docker;
     nix2container = sources.nix2container.packages.${build_system}.nix2container;
   in lib.mkIf config.docker.enable {
+    _module.args = {
+      inherit nix2container;
+    };
     out_docker = nix2container.buildImage {
       name = config.name;
-      contents = cfg.contents;
+      maxLayers = cfg.max_layers;
+      tag = cfg.tag;
+      copyToRoot = cfg.copy_to_root;
+      perms = cfg.perms;
+      initializeNixDatabase = cfg.initialize_nix_db;
+      layers = cfg.layers;
       config = lib.optionalAttrs (cfg.user != null) {
         user = cfg.user;
       } // lib.optionalAttrs (cfg.exposed_ports != null) {

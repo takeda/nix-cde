@@ -1,3 +1,5 @@
+nix-cde-self:
+
 { sources
 , default_build_system ? null
 }:
@@ -53,10 +55,15 @@ let
   pkgs_native = sources.nixpkgs.legacyPackages.${build_system};
   lib = pkgs_native.lib;
 
+  nix-cde = nix-cde-self {
+    inherit sources;
+    default_build_system = build_system;
+  };
+
   base_module = { config, ... }:
   {
     config._module.args = {
-      inherit build_system host_system is_shell lib pkgs pkgs_native sources;
+      inherit build_system host_system is_shell lib nix-cde pkgs pkgs_native sources;
       src = pkgs.nix-gitignore.gitignoreSource config.src_ignore config.src;
     };
   };
