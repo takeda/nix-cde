@@ -64,7 +64,7 @@ let
   base_module = { config, ... }:
   {
     config._module.args = {
-      inherit build_system host_system is_shell lib nix-cde pkgs pkgs_native sources stdenv;
+      inherit is_shell lib nix-cde pkgs pkgs_native sources stdenv;
       src = pkgs.nix-gitignore.gitignoreSource config.src_ignore config.src;
     };
   };

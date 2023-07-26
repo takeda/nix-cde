@@ -1,4 +1,4 @@
-{ build_system, config, lib, sources, ... }:
+{ config, lib, pkgs_native, sources, ... }:
 
 {
   options = with lib; {
@@ -120,7 +120,7 @@
   };
   config = let
     cfg = config.docker;
-    nix2container = sources.nix2container.packages.${build_system}.nix2container;
+    nix2container = sources.nix2container.packages.${pkgs_native.system}.nix2container;
   in lib.mkIf config.docker.enable {
     _module.args = {
       inherit nix2container;
