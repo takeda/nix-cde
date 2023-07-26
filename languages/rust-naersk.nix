@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, host_system, lib, sources, ... }:
 
 {
   options = with lib; {
@@ -6,6 +6,36 @@
       type = types.submodule {
         options = {
           enable = mkEnableOption "rust";
+
+          toolchain = mkOption {
+            type = with types; listOf package;
+            description = "Rust toolchain";
+            example = ''
+              with sources.fenix.packages.''${build_system}; [
+                minimal.rustc
+                minimal.cargo
+                targets.x86_64-unknown-linux-musl.latest.rust-std
+              ]
+            '';
+            default = with sources.fenix.packages.${host_system}; [
+                minimal.rustc
+                minimal.cargo
+            ];
+          };
+
+          build_options = mkOption {
+            type = types.attrs;
+            description = "Additional options to pass to naersk.buildPackage";
+            example = ''
+              {
+                doCheck = true;
+                nativeBuildInputs = with pkgs; [ pkgsStatic.stdenv.cc ];
+                CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
+                CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+              }
+            '';
+            default = {};
+          };
         };
       };
     };
@@ -22,26 +52,21 @@
 
   config = let
     cfg = config.rust;
-  in lib.mkIf cfg.enable {
-    out_rust_toolchain = pkgs.buildEnv {
-      name = config.name + "-env";
-      paths = with pkgs; [
-        rustc
-        cargo
-      ];
+    toolchain = with sources.fenix.packages.${host_system};
+      combine cfg.toolchain;
+    naersk = sources.naersk.lib.${host_system}.override {
+      cargo = toolchain;
+      rustc = toolchain;
     };
+  in lib.mkIf config.rust.enable {
+    out_rust_toolchain = toolchain;
 
-    out_rust = pkgs.naersk.buildPackage {
-      pname = config.name;
-      root = config.src;
-    };
+    out_rust = naersk.buildPackage ({
+      src = config.src;
+    } // cfg.build_options);
 
-    dev_apps = with pkgs; [
-      rustc
-      cargo
-    ] ++ lib.optionals pkgs.stdenv.isDarwin [
-      libiconv
-      darwin.apple_sdk.frameworks.CoreFoundation
+    dev_apps = [
+      toolchain
     ];
   };
 }
