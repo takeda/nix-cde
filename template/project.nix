@@ -10,7 +10,9 @@
 
   python = {
     enable = true;
-    package = pkgs.python310;
+    package = pkgs.python311;
+    inject_app_env = true;
+    prefer_wheels = false;
   };
 
   dev_commands = with pkgs; [

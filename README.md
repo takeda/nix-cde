@@ -11,7 +11,7 @@ is that first I had to find those projects, then learn how to use them (which
 also assumed knowing well how Nix works), often tweaking things as I learned
 more about it. That also created a lot of boilerplate that I had to copy from
 project to project, and if I learned something new I had to update it everywhere.
-_Nix-CDE's_ goal is to abstract all that boiler plate away.
+_Nix-CDE's_ goal is to abstract all that boilerplate away.
 
 ## Example
 
@@ -41,52 +41,72 @@ nix flake init -t github:takeda/nix-cde
     nix-cde.url = "github:takeda/nix-cde";
   };
 
-  outputs = { self, flake-utils, nix-cde, nixpkgs }: flake-utils.lib.eachDefaultSystem (build_system:
+  outputs = { self, flake-utils, nix-cde, ... }: flake-utils.lib.eachDefaultSystem (build_system:
   let
-    cde = is_shell: nix-cde.lib.mkCDE ./project.nix { inherit build_system is_shell; };
+    cde = is_shell: nix-cde.lib.mkCDE ./project.nix { inherit build_system is_shell self; };
     # version of CDE that is used for building docker (forces x86_64-linux binaries)
     cde-docker = nix-cde.lib.mkCDE ./project.nix {
-      inherit build_system;
+      inherit build_system self;
       host_system = "x86_64-linux";
     };
   in {
+    # used when invoking `nix develop`
+    devShells.default = (cde true).outputs.out_shell;
+    # used when invoking `nix build`
+    packages.default = (cde false).outputs.out_python;
     # used when invoking `nix build .#docker`
     packages.docker = cde-docker.outputs.out_docker;
-    # used when invoking `nix build`
-    defaultPackage = (cde false).outputs.out_python;
-    # used when invoking `nix develop`
-    devShell = (cde true).outputs.out_shell;
   });
 }
 ```
 
 #### Create `project.nix`
 ```nix
-{ config, modulesPath, pkgs, ... }:
+{ config, modulesPath, nix2container, pkgs, ... }:
 
 {
   # modules that our project will use
   require = [
     "${modulesPath}/languages/python-poetry.nix"
-    "${modulesPath}/builders/docker.nix"
+    "${modulesPath}/builders/docker-nix2container.nix"
   ];
 
   # name of our application
   name = "simple-app";
-  
-  # source code of our application
-  # (same directory as the file, usually doesn't change)
-  src = ./.;
+
+  # files to exclude (there often are files that you need to have in git, but
+  # you don't want nix to rebuild your app if they change)
+  # simpliarly to .gitignore you can also exclude everything and implicitly
+  # list files you want included
+  src_exclude = [''
+    *
+    !/simple_app.py
+    !/pyproject.toml
+    !/poetry.lock
+  ''];
+
+  lean_python = {
+    enable = true;
+    package = pkgs.python311;
+    expat = true;
+    zlib = true;
+  };
 
   python = {
     enable = true;
-    package = pkgs.python310; # use python3.10
+    package = pkgs.python311; # use python3.11
+    inject_app_env = true; # add project dependencies to dev shell (simplar to to being in an activated virtualenv)
+    prefer_wheels = false; # whether to compile packages ourselves or use wheels
   };
 
   docker = {
     enable = true;
     # call /bin/hello when running the container
     command = [ "${config.out_python}/bin/hello" ];
+    # place python in a separate layer
+    layers = with nix2container; [
+      (buildLayer { deps = [ pkgs.python311 ]; })
+    ];
   };
 
   # packages that should be available in dev shell
@@ -162,12 +182,11 @@ Hello, World!
 ### Building a docker image with our app
 
 ```shell
-$ nix build .#docker
-$ docker load <result
+$ nix run .#docker.copyToDockerDaemon
 $ docker images
-REPOSITORY          TAG                                IMAGE ID       CREATED          SIZE
-simple-app          l0d7ynxr4swybdwbs9wjb98zp2ryms7s   b02a1f83e8c2   2 minutes ago    138MB
-$ docker run --rm b02a1f83e8c2
+REPOSITORY   TAG                                IMAGE ID       CREATED        SIZE
+simple-app   dm3hinmdgp5d4cgjy4x2yxy811bvdp96   a70176be91af   N/A            178MB
+$ docker run --rm a70176be91af
 Hello, World!
 ```
 
@@ -190,46 +209,57 @@ Here's how to do it:
 1. Modify `project.nix` and add `"${modulesPath}/tools/mod-lean-python.nix"`
 in the `require` section, like this:
 ```nix
-   require = [
-     "${modulesPath}/languages/python-poetry.nix"
-     "${modulesPath}/deployments/build-docker.nix"
-     "${modulesPath}/tools/mod-lean-python.nix"
-   ];
+ require = [
+      "${modulesPath}/languages/python-poetry.nix"
+      "${modulesPath}/builders/docker-nix2container.nix"
+      "${modulesPath}/tools/mod-lean-python.nix"
+    ];
 ```
 2. add the following block
 ```nix
    lean_python = {
      enable = true;
-     package = pkgs.python310;
+     package = pkgs.python311;
      expat = true;
      zlib = true;
-     libffi = true;
    };
 ```
 3. update `python.package` to point to `config.out_lean_python` instead
-of `pkgs.python310`, like this:
+of `pkgs.python311`, like this:
 ```nix
-   python = {
-     enable = true;
-     package = config.out_lean_python;
-   };
+  python = {
+    enable = true;
+    package = config.out_lean_python;
+    inject_app_env = true; # add project dependencies to dev shell (simplar to to being in an activated virtualenv)
+    prefer_wheels = false; # whether to compile packages ourselves or use wheels
+  };
 ```
-4. re-run build:
+4. update 'docker.layers' ro point to config.out_lean_python instead of `pkgs.python311`, like this:
+
+```nix
+  docker = {
+    enable = true;
+    # call /bin/hello when running the container
+    command = [ "${config.out_python}/bin/hello" ];
+    # place python in a separate layer
+    layers = with nix2container; [
+      (buildLayer { deps = [ config.out_lean_python ]; })
+    ];
+  };
+```
+
+5. re-run build:
 ```shell
-$ nix build .#docker
-# this will take a bit longer as usual, as python is being compiled
+$ nix run .#docker.copyToDockerDaemon
+# this will take a bit longer than usual, as python is being compiled
 # subsequent calls should be quick due to caching
-$ docker load <result
 $ docker images
-REPOSITORY          TAG                                IMAGE ID       CREATED          SIZE
-simple-app          1pjjhhsixmx0j4zgljb91cpg7s6pvcss   12bad943bc8b   41 seconds ago   63.8MB
-simple-app          l0d7ynxr4swybdwbs9wjb98zp2ryms7s   b02a1f83e8c2   47 minutes ago   138MB
-$ docker run --rm 12bad943bc8b
+REPOSITORY   TAG                                IMAGE ID       CREATED        SIZE
+simple-app   dm3hinmdgp5d4cgjy4x2yxy811bvdp96   a70176be91af   N/A            178MB
+simple-app   slgngdkfbds8yfgbil12l04v0k6pwlhv   b503f16dd9fa   N/A            68.9MB
+$ docker run --rm b503f16dd9fa
 Hello, World!
 ```
-As we can see, this reduced the size of the container to 63MB. It's possible
-that it could be reduced even further once I figure out how to use python
-compiled with musl to
-[work with poetry2nix](https://github.com/nix-community/poetry2nix/issues/598)
-and also remove (setuptools) or replace with smaller versions (bash) some
-packages.
+As we can see, this reduced the size of the container to 69MB. It's possible
+that it could be reduced even further by using musl, and perhaps bash could be replaced with something else,
+unfortunately I don't know yet how to do that.

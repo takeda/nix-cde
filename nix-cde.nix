@@ -65,7 +65,7 @@ let
   {
     config._module.args = {
       inherit is_shell lib nix-cde pkgs pkgs_native sources stdenv;
-      src = pkgs.nix-gitignore.gitignoreSource config.src_ignore config.src;
+      src = pkgs.nix-gitignore.gitignoreSource config.src_exclude config.src;
     };
   };
 
