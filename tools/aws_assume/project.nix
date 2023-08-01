@@ -7,7 +7,7 @@
 
   name = "assume";
   src = ./.;
-  src_ignore = [''
+  src_exclude = [''
     *
     !/assume.py
     !/pyproject.toml
