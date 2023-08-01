@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, sources, src, ... }:
 
 {
   options = with lib; {
@@ -10,7 +10,7 @@
           package = mkOption {
             type = types.package;
             description = "python package";
-            example = "python38";
+            example = "python311";
           };
 
           modules = mkOption {
@@ -80,12 +80,12 @@
   config = let
     cfg = config.python;
     poetry = python: let
-      poetry2nix = pkgs.poetry2nix.overrideScope' (p2nself: p2nsuper: {
+      poetry2nix = sources.poetry2nix.legacyPackages.${pkgs.system}.overrideScope' (p2nself: p2nsuper: {
         defaultPoetryOverrides = p2nsuper.defaultPoetryOverrides.extend cfg.overrides;
       });
       common_cfg = {
         inherit python;
-        projectDir = config.src;
+        projectDir = src;
         preferWheels = cfg.prefer_wheels;
       };
     in {
@@ -99,16 +99,16 @@
       };
       packages = poetry2nix.mkPoetryPackages {
         inherit python;
-        projectDir = config.src;
+        projectDir = src;
       };
     };
 
     # python environment used for dev shell
-    python_env = if (cfg.inject_app_env && builtins.pathExists (config.src + "/poetry.lock"))
+    python_env = if (cfg.inject_app_env && builtins.pathExists (src + "/poetry.lock"))
     then (poetry cfg.package).env
     else cfg.package; # if there's no poetry project, just expose python itself
 
-  in lib.mkIf cfg.enable {
+  in lib.mkIf config.python.enable {
     dev_commands = [
       pkgs.poetry
     ];

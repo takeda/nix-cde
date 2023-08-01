@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, sources, ... }:
 
 {
   options = with lib; {
@@ -46,9 +46,10 @@
   };
 
   config = let
+    nix-bundle-lib = sources.nix-bundle.lib { nixpkgs = pkgs; };
     cfg = config.bundle;
   in lib.mkIf config.bundle.enable {
-    out_bundle = pkgs.nix-bundle-lib.nix-bootstrap-path {
+    out_bundle = nix-bundle-lib.nix-bootstrap-path {
       target = cfg.target;
       extraTargets = cfg.extra_targets;
       initScript = cfg.init_script;

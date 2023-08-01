@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, sources, src, ... }:
 
 {
   options = with lib; {
@@ -6,6 +6,36 @@
       type = types.submodule {
         options = {
           enable = mkEnableOption "rust";
+
+          toolchain = mkOption {
+            type = with types; listOf package;
+            description = "Rust toolchain";
+            example = ''
+              with fenix_packages; [
+                minimal.rustc
+                minimal.cargo
+                targets.x86_64-unknown-linux-musl.latest.rust-std
+              ]
+            '';
+            default = with sources.fenix.packages.${pkgs.system}; [
+                minimal.rustc
+                minimal.cargo
+            ];
+          };
+
+          build_options = mkOption {
+            type = types.attrs;
+            description = "Additional options to pass to naersk.buildPackage";
+            example = ''
+              {
+                doCheck = true;
+                nativeBuildInputs = with pkgs; [ pkgsStatic.stdenv.cc ];
+                CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
+                CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+              }
+            '';
+            default = {};
+          };
         };
       };
     };
@@ -22,26 +52,26 @@
 
   config = let
     cfg = config.rust;
-  in lib.mkIf cfg.enable {
-    out_rust_toolchain = pkgs.buildEnv {
-      name = config.name + "-env";
-      paths = with pkgs; [
-        rustc
-        cargo
-      ];
+    fenix_packages = sources.fenix.packages.${pkgs.system};
+    toolchain = with fenix_packages;
+      combine cfg.toolchain;
+    naersk = sources.naersk.lib.${pkgs.system}.override {
+      cargo = toolchain;
+      rustc = toolchain;
+    };
+  in lib.mkIf config.rust.enable {
+    _module.args = {
+      inherit fenix_packages;
     };
 
-    out_rust = pkgs.naersk.buildPackage {
-      pname = config.name;
-      root = config.src;
-    };
+    out_rust_toolchain = toolchain;
 
-    dev_apps = with pkgs; [
-      rustc
-      cargo
-    ] ++ lib.optionals pkgs.stdenv.isDarwin [
-      libiconv
-      darwin.apple_sdk.frameworks.CoreFoundation
+    out_rust = naersk.buildPackage ({
+      inherit src;
+    } // cfg.build_options);
+
+    dev_apps = [
+      toolchain
     ];
   };
 }

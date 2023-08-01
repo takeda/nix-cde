@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ...}:
+{ config, lib, pkgs, self, ...}:
 
 {
   options = with lib; {
@@ -15,6 +15,13 @@
       type = types.path;
       description = "path to the source code";
       example = "./.";
+      default = self;
+    };
+    src_exclude = mkOption {
+      type = with types; listOf (either str path);
+      description = "additional paths to ignore in addition to .gitignore (use for files that need to be in the repo, but aren't needed for building)";
+      example = ''["*" "!/my_project"]'';
+      default = [];
     };
     #cross_compile = mkOption {
     #  type = types.bool;

@@ -18,20 +18,28 @@
 
     naersk.url = "github:nix-community/naersk";
     naersk.inputs.nixpkgs.follows = "nixpkgs";
+    fenix.url = "github:nix-community/fenix";
+    fenix.inputs.nixpkgs.follows = "nixpkgs";
+
+    nix2container.url = "github:nlewo/nix2container";
+    nix2container.inputs.nixpkgs.follows = "nixpkgs";
 
     nix-bundle.url = "github:takeda/nix-bundle/nix-cde";
+    nix-bundle.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { ... } @ sources: {
-    defaultTemplate = {
+  outputs = { self, nixpkgs, ... } @ sources: let
+    nix-cde = nixpkgs.lib.fix (import ./nix-cde.nix);
+  in {
+    templates.default = {
       path = ./template;
       description = "An example of a nix-cde project";
     };
 
-    overlay = final: prev: {
-      mkCDE = import ./nix-cde.nix { inherit sources; };
+    overlays.default = final: prev: {
+      mkCDE = nix-cde { inherit sources; };
     };
 
-    lib.mkCDE = import ./nix-cde.nix { inherit sources; };
+    lib.mkCDE = nix-cde { inherit sources; };
   };
 }
