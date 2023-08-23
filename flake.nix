@@ -1,5 +1,5 @@
 {
-  description = "nix-cde";
+  description = "Nix-CDE (Nix-based Common Development Envrionemnt) provides a reproducible development environment that abstracts away Nix rough edges through the use of NixOS modules.";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
