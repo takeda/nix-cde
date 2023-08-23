@@ -8,48 +8,20 @@ project:
 
 { build_system ? default_build_system
 , host_system ? build_system
+, cross_system ? null
 , is_shell ? false
-, cross_compile ? false
 , overlay ? self: super: {}
 , self ? null
 }:
 
 let
-#  overlays = [
-#    (self: super: {
-#      nix-cde.mkCDE = import ./nix-cde.nix {
-#        inherit sources;
-#        default_build_system = build_system;
-#      };
-#      npmlock2nix = self.callPackage sources.npmlock2nix {};
-#      nix-bundle-lib = sources.nix-bundle.lib { nixpkgs = self; };
-#    })
-#    sources.poetry2nix.overlay
-#    sources.gomod2nix.overlays.default
-#    sources.naersk.overlay
-#    overlay
-#  ];
-#  pkgs_base = options: import sources.nixpkgs ({
-#    inherit overlays;
-#    config = {};
-#  } // options);
-#
-#  # Packages for the host (running) system
-#  pkgs = pkgs_base (if cross_compile then {
-#    localSystem = build_system;
-#    crossSystem = host_system;
-#  } else {
-#    localSystem = host_system;
-#  });
-#
-#  # Packages for the build system
-#  pkgs_native = pkgs_base {
-#    localSystem = build_system;
-#  };
-#  lib = pkgs_native.lib;
-
   # Packages for the host (running) system
-  pkgs = sources.nixpkgs.legacyPackages.${host_system};
+  pkgs = if (cross_system == null)
+  then sources.nixpkgs.legacyPackages.${host_system}
+  else (import sources.nixpkgs {
+    localSystem = host_system;
+    crossSystem = cross_system;
+  });
 
   # Packages for the build system
   pkgs_native = sources.nixpkgs.legacyPackages.${build_system};
