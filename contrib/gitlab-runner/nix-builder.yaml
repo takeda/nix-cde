@@ -151,8 +151,8 @@ Resources:
                   echo -e "\e[0Ksection_start:`date +%s`:container_install[collapsed=true]\r\e[0KInstalling base packages"
                   ${!pkgs.nix}/bin/nix-env -i ${!lib.concatStringsSep " " (with pkgs; [ nixFlakes bash curl cacert git jq moreutils openssh skopeo ])}
               
-                  ${!pkgs.nix}/bin/nix-channel --add https://nixos.org/channels/nixpkgs-unstable
-                  ${!pkgs.nix}/bin/nix-channel --update nixpkgs
+                  #${!pkgs.nix}/bin/nix-channel --add https://nixos.org/channels/nixpkgs-unstable
+                  #${!pkgs.nix}/bin/nix-channel --update nixpkgs
                   echo -e "\e[0Ksection_end:`date +%s`:container_install\r\e[0K"
                 '';
                 runner_config = name: token: {
@@ -165,6 +165,7 @@ Resources:
                     "/nix/store:/nix/store:ro"
                     "/nix/var/nix/db:/nix/var/nix/db:ro"
                     "/nix/var/nix/daemon-socket:/nix/var/nix/daemon-socket:ro"
+                    "/root/.cache/nix:/root/.cache/nix"
                     "/srv:/cache"
                   ];
                   dockerDisableCache = true;
@@ -176,7 +177,7 @@ Resources:
                     PATH = "/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin";
                     NIX_SSL_CERT_FILE = "/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt";
                   };
-                  tagList = [ "nix" ];
+                  tagList = [ "nix" "nix-x86_64" ];
                 };
                 upload_to_cache = pkgs.writeShellScript "upload-to-cache" ''
                   echo "Uploading to cache: $OUT_PATHS"
@@ -220,7 +221,163 @@ Resources:
                 };
                 services.gitlab-runner = {
                   enable = true;
-                  settings.concurrent = 4;
+                  settings.concurrent = 10;
+                  gracefulTermination = true;
+                  services = mapAttrs runner_config REGISTRATION_TOKENS;
+                };
+                services.upload-daemon = {
+                  enable = true;
+                  package = upload-daemon-package;
+                  targets = [ CACHE_BUCKET_SIGNED ];
+                  workers = 4;
+                };
+                virtualisation.docker = {
+                  daemon.settings = {
+                    ipv6 = true;
+                    fixed-cidr-v6 = "fd00:ffff::/80";
+                    ip6tables = true;
+                    experimental = true;
+                  };
+                };
+                environment.systemPackages = with pkgs; [ git ];
+              }
+  InstanceLaunchTemplateAarch64:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            DeleteOnTermination: true
+            Encrypted: true
+            VolumeSize: 100
+            VolumeType: gp3
+        CapacityReservationSpecification:
+          CapacityReservationPreference: open
+        EbsOptimized: true
+        IamInstanceProfile:
+          Name: !Ref InstanceProfile
+        ImageId: ami-07dfadedb6493942b
+        InstanceType: c7g.4xlarge
+        KeyName: !Ref InstanceKey
+        MetadataOptions:
+          HttpEndpoint: enabled
+          HttpProtocolIpv6: enabled
+          HttpTokens: required
+        PrivateDnsNameOptions:
+          EnableResourceNameDnsAAAARecord: true
+          EnableResourceNameDnsARecord: true
+          HostnameType: resource-name
+        SecurityGroupIds:
+        - !ImportValue {"Fn::Sub": "${VPCStackName}-DefaultSecurityGroup"}
+        UserData:
+          Fn::Base64:
+            !Sub |
+              { modulesPath, pkgs, lib, config, ... }:
+              
+              let
+                CACHE_PUB_KEY="${CachePublicKey}";
+                CACHE_PRIV_KEY=pkgs.writeText "cache-key" "${CachePrivKey}";
+                CACHE_BUCKET="s3://${BucketName}?region=${AWS::Region}";
+                CACHE_BUCKET_SIGNED="s3://${BucketName}?region=${AWS::Region}&secret-key=${!CACHE_PRIV_KEY}";
+                GITLAB_URL="${GitLabURL}";
+                REGISTRATION_TOKENS={ ${RegistrationTokens} };
+              
+                pre_build_script = pkgs.writeScript "setup-container" ''
+                  echo -e "\e[0Ksection_start:`date +%s`:container_initialization\r\e[0KContainer initialization"
+                  mkdir -p -m 0755 /nix/var/log/nix/drvs
+                  mkdir -p -m 0755 /nix/var/nix/gcroots
+                  mkdir -p -m 0755 /nix/var/nix/profiles
+                  mkdir -p -m 0755 /nix/var/nix/temproots
+                  mkdir -p -m 0755 /nix/var/nix/userpool
+                  mkdir -p -m 1777 /nix/var/nix/gcroots/per-user
+                  mkdir -p -m 1777 /nix/var/nix/profiles/per-user
+                  mkdir -p -m 0755 /nix/var/nix/profiles/per-user/root
+                  mkdir -p -m 0700 "$HOME/.nix-defexpr"
+              
+                  . ${!pkgs.nix}/etc/profile.d/nix.sh
+              
+                  mkdir -p /etc/nix
+                  echo "substituters = ${!CACHE_BUCKET} https://cache.nixos.org/" >> /etc/nix/nix.conf
+                  echo "trusted-public-keys = ${!CACHE_PUB_KEY} cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" >> /etc/nix/nix.conf
+                  echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
+                  echo -e "\e[0Ksection_end:`date +%s`:container_initialization\r\e[0K"
+              
+                  echo -e "\e[0Ksection_start:`date +%s`:container_install[collapsed=true]\r\e[0KInstalling base packages"
+                  ${!pkgs.nix}/bin/nix-env -i ${!lib.concatStringsSep " " (with pkgs; [ nixFlakes bash curl cacert git jq moreutils openssh skopeo ])}
+              
+                  #${!pkgs.nix}/bin/nix-channel --add https://nixos.org/channels/nixpkgs-unstable
+                  #${!pkgs.nix}/bin/nix-channel --update nixpkgs
+                  echo -e "\e[0Ksection_end:`date +%s`:container_install\r\e[0K"
+                '';
+                runner_config = name: token: {
+                  registrationConfigFile = pkgs.writeText "gitlab-runner-nix-registration" ''
+                    CI_SERVER_URL=${!GITLAB_URL}
+                    REGISTRATION_TOKEN=${!token}
+                  '';
+                  dockerImage = "alpine";
+                  dockerVolumes = [
+                    "/nix/store:/nix/store:ro"
+                    "/nix/var/nix/db:/nix/var/nix/db:ro"
+                    "/nix/var/nix/daemon-socket:/nix/var/nix/daemon-socket:ro"
+                    "/root/.cache/nix:/root/.cache/nix"
+                    "/srv:/cache"
+                  ];
+                  dockerDisableCache = true;
+                  preBuildScript = pre_build_script;
+                  environmentVariables = {
+                    ENV = "/etc/profile";
+                    USER = "root";
+                    NIX_REMOTE = "daemon";
+                    PATH = "/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin";
+                    NIX_SSL_CERT_FILE = "/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt";
+                  };
+                  tagList = [ "nix-aarch64" ];
+                };
+                upload_to_cache = pkgs.writeShellScript "upload-to-cache" ''
+                  echo "Uploading to cache: $OUT_PATHS"
+                  ${!pkgs.netcat}/bin/nc -U /run/upload-daemon/upload.sock -N <<< $OUT_PATHS || echo "Uploading failed"
+                '';
+                upload-daemon = builtins.fetchGit {
+                  url = "https://github.com/serokell/upload-daemon.git";
+                  ref = "master";
+                  rev = "738fbb07e938b5344eac2fb638f2a2edd31b7453";
+                };
+                upload-daemon-package = pkgs.haskellPackages.callCabal2nix "upload-daemon" upload-daemon {};
+                upload-daemon-service = import (upload-daemon + "/service.nix") null;
+              in with lib;
+              {
+                imports = [ "${!modulesPath}/virtualisation/amazon-image.nix" upload-daemon-service ];
+                system.stateVersion = "23.05";
+                ec2.hvm = true;
+              
+                # Workaround from https://github.com/NixOS/nixpkgs/issues/109389
+                networking.dhcpcd.denyInterfaces = [ "veth*" ];
+              
+                nix = {
+                  settings = {
+                    substituters = [ CACHE_BUCKET ];
+                    trusted-public-keys = [ CACHE_PUB_KEY ];
+                  };
+                  gc = {
+                    automatic = false;
+                    options = "--delete-older-than 30d";
+                  };
+                  optimise.automatic = true;
+                  package = pkgs.nix;
+                  extraOptions = ''
+                    min-free = ${!toString (1 * 1024 * 1024 * 1024)}
+                    max-free = ${!toString (2 * 1024 * 1024 * 1024)}
+                    experimental-features = nix-command flakes
+                    post-build-hook = ${!upload_to_cache}
+                    keep-outputs = true
+                    keep-derivations = true
+                  '';
+                };
+                services.gitlab-runner = {
+                  enable = true;
+                  settings.concurrent = 10;
+                  gracefulTermination = true;
                   services = mapAttrs runner_config REGISTRATION_TOKENS;
                 };
                 services.upload-daemon = {
@@ -250,7 +407,21 @@ Resources:
       MaxSize: 2
       Tags:
       - Key: Name
-        Value: nix-builder
+        Value: nix-builder-x86_64
+        PropagateAtLaunch: true
+      VPCZoneIdentifier: !Split [",", !ImportValue {"Fn::Sub": "${VPCStackName}-PublicSubnets"}]
+  AutoscalingGroupAarch64:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      DesiredCapacity: 1
+      LaunchTemplate:
+        LaunchTemplateId: !Ref InstanceLaunchTemplateAarch64
+        Version: !GetAtt InstanceLaunchTemplateAarch64.LatestVersionNumber
+      MinSize: 0
+      MaxSize: 2
+      Tags:
+      - Key: Name
+        Value: nix-builder-aarch64
         PropagateAtLaunch: true
       VPCZoneIdentifier: !Split [",", !ImportValue {"Fn::Sub": "${VPCStackName}-PublicSubnets"}]
 Outputs:
