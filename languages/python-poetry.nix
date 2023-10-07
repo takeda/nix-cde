@@ -21,7 +21,7 @@
           };
 
           extra_shell_packages = mkOption {
-            type = with types; functionOf (listOf package);
+            type = with types; functionTo (listOf package);
             description = "additional packages to include for development (for example pip for serverless)";
             example = "ps: [ ps.pip ]";
             default = ps: [ ];
@@ -56,6 +56,13 @@
             default = self: super: {};
           };
 
+          build_check_groups = mkOption {
+            type = with types; listOf str;
+            description = "list of dependency groups to install for running checks (typically you might want to specify \"dev\")";
+            example = ''[ "dev" ]'';
+            default = [ "dev" ];
+          };
+
           check_command = mkOption {
             type = with types; nullOr str;
             description = "command to run to execute unit tests";
@@ -80,23 +87,23 @@
   config = let
     cfg = config.python;
     poetry = python: let
-      poetry2nix = sources.poetry2nix.legacyPackages.${pkgs.system}.overrideScope' (p2nself: p2nsuper: {
-        defaultPoetryOverrides = p2nsuper.defaultPoetryOverrides.extend cfg.overrides;
-      });
+      poetry2nix = sources.poetry2nix.legacyPackages.${pkgs.system};
       common_cfg = {
         inherit python;
         projectDir = src;
         preferWheels = cfg.prefer_wheels;
+        overrides = poetry2nix.overrides.withDefaults cfg.overrides;
       };
     in {
-      app = poetry2nix.mkPoetryApplication common_cfg // {
+      app = poetry2nix.mkPoetryApplication (common_cfg // {
         doCheck = cfg.check_command != null;
+        checkGroups = if (cfg.check_command == null) then [] else cfg.build_check_groups;
         checkPhase = cfg.check_command;
-      };
-      env = poetry2nix.mkPoetryEnv common_cfg // {
+      });
+      env = poetry2nix.mkPoetryEnv (common_cfg // {
         editablePackageSources = cfg.modules;
         extraPackages = cfg.extra_shell_packages;
-      };
+      });
       packages = poetry2nix.mkPoetryPackages {
         inherit python;
         projectDir = src;
