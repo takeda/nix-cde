@@ -14,7 +14,7 @@
           bzip2 = mkOption { type = types.bool; default = false; };
           # you might need it on darwin for _scproxy module
           configd = mkOption { type = types.bool; default = false; };
-          expat = mkOption { type = types.bool; default = false; };
+          expat = mkOption { type = types.bool; default = true; };
           libffi = mkOption { type = types.bool; default = false; };
           gdbm = mkOption { type = types.bool; default = false; };
           xz = mkOption { type = types.bool; default = false; };
@@ -22,7 +22,7 @@
           openssl = mkOption { type = types.bool; default = false; };
           readline = mkOption { type = types.bool; default = false; };
           sqlite = mkOption { type = types.bool; default = false; };
-          zlib = mkOption { type = types.bool; default = false; };
+          zlib = mkOption { type = types.bool; default = true; };
           tzdata = mkOption { type = types.bool; default = false; };
           mimetypes_support = mkOption { type = types.bool; default = false; };
           x11_support = mkOption { type = types.bool; default = false; };
@@ -67,6 +67,22 @@
         stripBytecode = lean_python.strip_bytecode;
         includeSiteCustomize = lean_python.include_site_customize;
         enableOptimizations = lean_python.enable_optimizations && !pkgs.stdenv.cc.isClang;
+        packageOverrides = self: super: {
+          # unit tests require some components that we might want to keep
+          # disabled
+          babel = super.babel.overridePythonAttrs (_: {
+            doCheck = false;
+          });
+          freezegun = super.freezegun.overridePythonAttrs (_: {
+            doCheck = false;
+          });
+          pytest-xdist = super.pytest-xdist.overridePythonAttrs (_: {
+            doCheck = false;
+          });
+          six = super.six.overridePythonAttrs (_: {
+            doCheck = false;
+          });
+        };
       }
       // optionalAttrs (!lean_python.bzip2) { bzip2 = null; }
       // optionalAttrs (!lean_python.configd) { configd = null; }

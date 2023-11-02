@@ -87,7 +87,7 @@
   config = let
     cfg = config.python;
     poetry = python: let
-      poetry2nix = sources.poetry2nix.legacyPackages.${pkgs.system};
+      poetry2nix = import sources.poetry2nix { inherit pkgs; };
       common_cfg = {
         inherit python;
         projectDir = src;
