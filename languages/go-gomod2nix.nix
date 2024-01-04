@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, sources, src, pkgs, ... }:
 
 {
   options = with lib; {
@@ -27,22 +27,30 @@
       type = types.package;
       readOnly = true;
     };
+
+    out_go_env = mkOption {
+      type = types.package;
+      readOnly = true;
+    };
   };
 
   config = let
     cfg = config.go;
+    gomod2nix = sources.gomod2nix.legacyPackages.${pkgs.system};
+    goEnv = gomod2nix.mkGoEnv { pwd = src; };
   in lib.mkIf cfg.enable {
-    out_go = pkgs.buildGoApplication {
+    out_go = gomod2nix.buildGoApplication {
       pname = config.name;
       version = config.version;
       src = config.src;
       modules = cfg.modules;
     };
+    out_go_env = config.go.go;
     dev_commands = [
-      pkgs.gomod2nix
+      gomod2nix.gomod2nix
     ];
     dev_apps = [
-      cfg.go
+      goEnv
     ];
   };
 }
