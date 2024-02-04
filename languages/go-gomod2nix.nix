@@ -19,6 +19,12 @@
             description = "path to gomod2nix.toml file";
             default = config.src + "/gomod2nix.toml";
           };
+
+          inject_app_env = mkOption {
+            type = types.bool;
+            description = "include the app in the dev shell";
+            default = true;
+          };
         };
       };
     };
@@ -49,8 +55,6 @@
     dev_commands = [
       gomod2nix.gomod2nix
     ];
-    dev_apps = [
-      goEnv
-    ];
+    dev_apps = lib.optional cfg.inject_app_env goEnv;
   };
 }
