@@ -92,7 +92,7 @@
         inherit python;
         projectDir = src;
         preferWheels = cfg.prefer_wheels;
-        overrides = poetry2nix.overrides.withDefaults cfg.overrides;
+        overrides = poetry2nix.defaultPoetryOverrides.extend cfg.overrides;
       };
     in {
       app = poetry2nix.mkPoetryApplication (common_cfg // {
