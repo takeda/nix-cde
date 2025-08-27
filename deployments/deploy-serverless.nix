@@ -49,7 +49,7 @@
       nodejs = cfg.nodejs;
       nativeBuildInputs = [
         pkgs.bash
-        pkgs.python3
+        pkgs.python311
       ]
       ++ lib.optional pkgs.stdenv.hostPlatform.isDarwin pkgs.darwin.cctools;
     };
